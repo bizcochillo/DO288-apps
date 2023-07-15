@@ -3,3 +3,4 @@ kind: ConfigMap
 metadata:
   name: configmap-hello
 data:
+  APP_MSG: Ya no voy a comer nunca mas
