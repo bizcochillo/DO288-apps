@@ -1,0 +1,72 @@
+kind: "Template"
+apiVersion: "template.openshift.io/v1"
+metadata:
+  name: template-test
+objects:
+- kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: db-cm
+    label: 
+      app: database
+    annotations:
+      template.openshift.io/expose-username: "{.data['my\\.username']}"
+  data:
+    username: ${PARAMETER_DB_USER}
+    password: ${PARAMETER_DB_PASS}
+- kind: Deployment
+  apiVersion: apps/v1
+  metadata:
+    name: database
+  spec:
+    replicas: 1 
+    selector:
+      matchLabels: 
+        app: database
+    template:
+      metadata:
+        labels:
+          app: database
+      spec:
+        containers:
+          - name: mysql 
+            image: mysql:latest
+            env: 
+            - name: MYSQL_ALLOW_EMPTY_PASSWORD
+              value: "yes"
+            - name: MYSQL_USER
+              valueFrom: 
+                configMapKeyRef: 
+                  name: db-cm
+                  key: username
+            - name: MYSQL_PASSWORD
+              valueFrom: 
+                configMapKeyRef:
+                  name: db-cm
+                  key: password
+            - name: MYSQL_DATABASE
+              value: "items"
+            ports:
+              - containerPort: 3306
+                protocol: TCP
+- kind: "Service" 
+  apiVersion: "v1"
+  metadata:
+    name: "db-svc"
+    app: database
+  spec:
+    ports:
+    - name: "web"
+      port: 3306 
+      targetPort: 3306
+    selector:
+        app: "database"
+parameters: 
+- descripton: Password for MySQL
+  required: true
+  name: PARAMETER_DB_PASS
+- descripton: User for MySQL
+  required: true
+  name: PARAMETER_DB_USER
+
+          
